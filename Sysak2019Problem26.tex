@@ -1,0 +1,192 @@
+\documentclass{beamer}
+\usepackage[cp1251]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,mathrsfs,mathtext}
+\usepackage{graphicx, epsfig}
+\usetheme{Warsaw}%{Singapore}%{Warsaw}%{Warsaw}%{Darmstadt}
+\usecolortheme{sidebartab}
+\definecolor{beamer@blendedblue}{RGB}{15,120,80}
+%----------------------------------------------------------------------------------------------------------
+\title[\hbox to 56mm{26 задача  \hfill\insertframenumber\,/\,\inserttotalframenumber}]
+{26 задача: \\Кластеризация предобученных векторов \\ методом K-means}
+\author[М.\,А. Сысак]{\large \\Михаил Алексеевич Сысак}
+\institute{\large
+Московский физико-технический институт}
+
+\date{29~апреля 2019~г.}
+
+
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+%----------------------------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+%\thispagestyle{empty}
+\titlepage
+\end{frame}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Описание выборки}
+ \begin{itemize}
+ 	\item Выборка состоит из предобученных векторов fasttext.
+ 	\item Количество объектов~---~$19924$, количество признаков~---~$300$.
+ \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Описание алгоритма кластеризации}
+Метод $k$-средних:
+\begin{enumerate}
+	\item Случайно выбирается $k$ центроид.
+	\item Для каждого объекта кластер определяется ближайшей к нему центроидой.
+	\item В качестве новых центроид берутся центры масс полученных кластеров.
+	\item Шаги 2-3 повторяются фиксированное количество раз, или пока функционал качества не сойдется.
+\end{enumerate}
+Используемые модификации:
+\begin{itemize}
+	\item k-means++
+	\item MiniBatchKMeans
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Описание алгоритма кластеризации}
+\begin{figure}
+	\caption{Метод $k$-средних}
+	\centering
+\includegraphics[scale=0.7]{pic1.png}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Список структурных параметров и критериев качества}
+Структурный параметр~---~$k$ (количество кластеров) в четырех диапазонах:
+\begin{itemize}
+	\item $2, 3, \dotsc, 10$
+	\item $10, 20, \dotsc, 100$
+	\item $100, 200, \dotsc, 1000$
+	\item $1000, 2000, \dotsc, 10000$
+\end{itemize}
+Критерии качества:
+\begin{itemize}
+	\item Сумма средних внутрикластерных расстояний $\Phi_0$ и $C_0$
+	\item Сумма межкластерных расстояний $\Phi_1$ и $C_1$
+	\item Силуэт $s_e$ и $s_c$
+\end{itemize}
+Каждый критерий вычисляется с использованием евклидовой метрики и косинусного расстояния.
+\end{frame}
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Список структурных параметров и критериев качества}
+\begin{align*}\Phi_0 &= \sum_{y \in Y} \dfrac{1}{|K_y|}\sum_{i: y_i = y}\rho^2 (x_i, \mu_y) & \Phi_1 &= \sum_{y \in Y} \rho^2 (\mu_y, \mu)\end{align*}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.3]{pic2.jpg}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.3]{pic3.jpg}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Список структурных параметров и критериев качества}
+\begin{align*}C_0 &= \sum_{y \in Y} \dfrac{1}{|K_y|}\sum_{i:y_i = y} \left( 1 - \dfrac{(x_i, \mu_y)}{||x_i|| \cdot ||\mu_y||} \right) & C_1 &= \sum_{y \in Y}\left(1-\dfrac{(\mu_y, \mu)}{||\mu_y||\cdot ||\mu||}\right)\end{align*}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.3]{pic4.jpg}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.3]{pic5.jpg}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{Постановка задачи}
+\framesubtitle{Список структурных параметров и критериев качества}
+$$s = \dfrac{\sum\limits_{x_i \in X} \frac{b_i - a_i}{\max(a_i, b_i)}}{\sum\limits_{y \in Y} |K_y|}$$
+Величины $a$ и $b$ для элемента $x$ кластера $y$:
+\begin{align*}a &= \dfrac{1}{|K_y| - 1}\sum_{x' \in K_y, x' \neq x} d(x, x') & b &= \min_{y' \neq y}\dfrac{1}{|K_{y'}|}\sum_{x' \in K_{y'}} d(x, x')\end{align*}
+$d(i, j)$ определяется метрикой или функцией расстояния.\\
+\vspace{10pt}
+Критерий качества реализован в библиотеке scikit-learn.
+\end{frame}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Вычислительный эксперимент}
+\framesubtitle{Код}
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.26]{pic6.jpg}
+	\includegraphics[scale=0.26]{pic7.jpg}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{Вычислительный эксперимент}
+\framesubtitle{Графики критериев качества от структурного параметра}
+\begin{figure}
+	\includegraphics[scale=0.25]{figures/fig1.jpg}
+	\includegraphics[scale=0.25]{figures/fig2.jpg}
+	\includegraphics[scale=0.25]{figures/fig3.jpg} 
+	\includegraphics[scale=0.25]{figures/fig4.jpg}
+\end{figure}
+\begin{center}
+{\small По отдельности критерии качества недостаточно информативны.}
+\end{center}
+\vspace{10pt}
+\end{frame}\begin{frame}
+\frametitle{Вычислительный эксперимент}
+\framesubtitle{Графики критериев качества от структурного параметра}
+\begin{figure}
+\includegraphics[scale=0.25]{figures/fig5.jpg}
+\includegraphics[scale=0.25]{figures/fig6.jpg}
+\includegraphics[scale=0.25]{figures/fig7.jpg} 
+\includegraphics[scale=0.25]{figures/fig8.jpg}
+\end{figure}
+\begin{center}
+{\small По отдельности критерии качества недостаточно информативны.}
+\end{center}
+\vspace{10pt}
+\end{frame}
+\begin{frame}
+\frametitle{Вычислительный эксперимент}
+\framesubtitle{Графики критериев качества от структурного параметра}
+\begin{columns}
+	\column{0.35\linewidth}
+	\includegraphics[scale=0.27]{figures/fig9.jpg}
+	\includegraphics[scale=0.27]{figures/fig10.jpg}
+	\column{0.55\linewidth}
+	Начиная с $k = 6$, кластеризация перестает терять смысл с точки зрения <<евклидова>> силуэта, поскольку критерий становится отрицательным.\\ Близкие к нулю значения при $k < 6$ показывают, что в этом промежутке получаемые кластеры расположены на малых расстояниях друг от друга.
+\end{columns}
+\end{frame}
+\begin{frame}
+\frametitle{Вычислительный эксперимент}
+\framesubtitle{Графики критериев качества от структурного параметра}
+\begin{columns}
+	\column{0.3\linewidth}
+	\includegraphics[scale=0.22]{figures/fig11.jpg}
+	\includegraphics[scale=0.22]{figures/fig14.jpg}
+	\column{0.3\linewidth}
+	\includegraphics[scale=0.22]{figures/fig12.jpg}
+	\includegraphics[scale=0.22]{figures/fig15.jpg}
+	\column{0.3\linewidth}
+	\includegraphics[scale=0.22]{figures/fig13.jpg}
+	\includegraphics[scale=0.22]{figures/fig16.jpg}
+\end{columns}
+\begin{center}
+{\small Кластеризация остается неэффективной для больших значений $k$.}
+\end{center}
+\end{frame}
+%----------------------------------------------------------------------------------------------------------
+\begin{frame}{Заключение}
+\begin{itemize}
+	\item При $k > 6$ кластеризация становится неэффективной.
+	\item Для $k \le 6$ кластеры имеют смысл.
+	\item Разделение на $k = 2$ кластера дает лучший результат.
+	\item Несмотря на это, малое значение силуэта показывает, что такое сочетание алгоритма и критериев качества плохо подходит для кластеризации данной выборки.
+\end{itemize}
+\end{frame}
+%----------------------------------------------------------------------------------------------------------
+\end{document} 
